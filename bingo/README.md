@@ -58,13 +58,13 @@ cp .env.example .env
 docker compose up -d
 
 # 4. Start the API (Flyway applies the migrations on startup)
-./mvnw spring-boot:run
+./gradlew bootRun spring-boot:run
 ```
 
-### Run the tests
+### Run the tests1
 
 ```bash
-./mvnw test
+./gradlew test
 ```
 
 ## Configuration

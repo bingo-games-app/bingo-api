@@ -1,0 +1,282 @@
+// ========================================
+// BINGO - MVP
+// ========================================
+
+Enum game_status {
+  WAITING
+  RUNNING
+  FINISHED
+  CANCELLED
+}
+
+Enum game_mode {
+  AUTOMATIC
+  MANUAL
+}
+
+
+// ========================================
+// APP_USER
+// A registered account on the platform.
+// Creates and owns games. Can also join games
+// as a participant (user_id on participant).
+// ========================================
+
+Table app_user {
+  id uuid [primary key]
+
+  name varchar(100) [not null]
+
+  email varchar(255) [not null, unique]
+
+  password_hash varchar(255) [not null]
+
+  created_at timestamptz [not null]
+}
+
+
+// ========================================
+// GAME
+// A bingo match (75 balls, full card to win).
+//
+// owner_id is the user who created and runs
+// the match.
+//
+// mode is chosen at creation and is IMMUTABLE:
+// never include it in an UPDATE (optionally
+// enforce it with a trigger).
+//
+// winner_card_id / bingo_at are filled when the
+// first valid BINGO claim is accepted.
+// ========================================
+
+Table game {
+  id uuid [primary key]
+
+  name varchar(100) [not null]
+
+  owner_id uuid [not null]
+
+  join_code varchar(20) [not null, unique]
+
+  status game_status [not null, default: 'WAITING']
+
+  mode game_mode [not null, note: 'Immutable after creation']
+
+  winner_card_id uuid
+
+  created_at timestamptz [not null]
+
+  started_at timestamptz
+
+  finished_at timestamptz
+
+  bingo_at timestamptz
+}
+
+
+// ========================================
+// PARTICIPANT
+//
+// Someone inside a match.
+//
+// user_id != NULL -> registered user
+// user_id == NULL -> guest (identified by
+//                    guest_token_hash)
+//
+// So there is no separate Guest table.
+// The raw guest token lives only on the client;
+// the server stores just its hash.
+// ========================================
+
+Table participant {
+  id uuid [primary key]
+
+  game_id uuid [not null]
+
+  user_id uuid
+
+  name varchar(100) [not null]
+
+  guest_token_hash varchar(255)
+
+  joined_at timestamptz [not null]
+
+  indexes {
+    (game_id, user_id) [unique]
+    guest_token_hash [unique]
+  }
+
+  checks {
+    `user_id IS NOT NULL OR guest_token_hash IS NOT NULL` [name: 'chk_participant_identity']
+  }
+}
+
+
+// ========================================
+// CARD
+//
+// For the MVP each participant can have up to
+// 3 cards per game. card_number (1..3) plus the
+// unique index on (participant_id, card_number)
+// enforces that limit in the database.
+//
+// sha_256_hash is the hash of the card contents,
+// unique per game, so two identical cards can
+// never exist in the same match.
+// ========================================
+
+Table card {
+  id uuid [primary key]
+
+  game_id uuid [not null]
+
+  participant_id uuid [not null]
+
+  card_number smallint [not null, note: '1 to 3']
+
+  sha_256_hash varchar(64) [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    (participant_id, card_number) [unique]
+    (game_id, sha_256_hash) [unique]
+  }
+
+  checks {
+    `card_number BETWEEN 1 AND 3` [name: 'chk_card_number_range']
+  }
+}
+
+
+// ========================================
+// CARD_CELL
+//
+// Each cell of the 5x5 card.
+//
+// Example:
+// number = 32
+// row_index = 0
+// col_index = 2   (column N: 31..45)
+//
+// Center cell (free space):
+// number = NULL
+// is_free = true
+//
+// marked_at is set when the player marks the
+// number (only allowed if it was already drawn).
+// ========================================
+
+Table card_cell {
+  id uuid [primary key]
+
+  card_id uuid [not null]
+
+  number integer
+
+  row_index smallint [not null]
+
+  col_index smallint [not null]
+
+  is_free boolean [not null, default: false]
+
+  marked_at timestamptz
+
+  indexes {
+    (card_id, row_index, col_index) [unique]
+    (card_id, number) [unique]
+  }
+
+  checks {
+    `row_index BETWEEN 0 AND 4` [name: 'chk_cell_row_range']
+    `col_index BETWEEN 0 AND 4` [name: 'chk_cell_col_range']
+    `number IS NULL OR number BETWEEN col_index * 15 + 1 AND col_index * 15 + 15` [name: 'chk_cell_number_by_column']
+    `is_free = (number IS NULL)` [name: 'chk_cell_free_has_no_number']
+  }
+}
+
+
+// ========================================
+// DRAWN_NUMBER
+//
+// The balls of a match, in call order.
+//
+// AUTOMATIC mode: when the game starts, the full
+// shuffled sequence (1..75) is inserted with
+// drawn_at = NULL. Each click of the "draw next"
+// button sets drawn_at on the lowest draw_order
+// that is still NULL.
+//
+// MANUAL mode: the owner informs each number; a
+// row is inserted already with drawn_at set.
+//
+// Uniqueness of (game_id, number) prevents
+// repeated balls; uniqueness of (game_id,
+// draw_order) prevents double-click races.
+// ========================================
+
+Table drawn_number {
+  id uuid [primary key]
+
+  game_id uuid [not null]
+
+  number integer [not null]
+
+  draw_order smallint [not null]
+
+  drawn_at timestamptz [note: 'NULL = sequence generated but not called yet (AUTOMATIC mode)']
+
+  indexes {
+    (game_id, number) [unique]
+    (game_id, draw_order) [unique]
+  }
+
+  checks {
+    `number BETWEEN 1 AND 75` [name: 'chk_drawn_number_range']
+    `draw_order BETWEEN 1 AND 75` [name: 'chk_draw_order_range']
+  }
+}
+
+
+
+
+
+// ========================================
+// RELATIONSHIPS
+// ========================================
+
+
+// A user can create many games.
+// A game has a single owner.
+Ref: game.owner_id > app_user.id
+
+
+// The first valid BINGO claim sets the winning card.
+Ref: game.winner_card_id > card.id
+
+
+// A game has many participants.
+Ref: participant.game_id > game.id
+
+
+// A participant may be linked to a registered user
+// (NULL for guests).
+Ref: participant.user_id > app_user.id
+
+
+// A game has many cards.
+Ref: card.game_id > game.id
+
+
+// A card belongs to one participant
+// (up to 3 per participant in the MVP).
+Ref: card.participant_id > participant.id
+
+
+// A card has 25 cells (24 numbers + 1 free space).
+Ref: card_cell.card_id > card.id
+
+
+// A game has up to 75 drawn/queued numbers.
+Ref: drawn_number.game_id > game.id
