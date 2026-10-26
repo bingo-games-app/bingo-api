@@ -1,0 +1,9 @@
+spring:
+  config:
+    import: "file:./.env[.properties]"
+  application:
+    name: bingo
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}

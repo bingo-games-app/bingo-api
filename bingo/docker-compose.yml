@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bingo-postgres
+    environment:
+      POSTGRES_DB: bingo
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "55432:5432"
+    volumes:
+      - bingo-pgdata:/var/lib/postgresql/data
+
+volumes:
+  bingo-pgdata:
