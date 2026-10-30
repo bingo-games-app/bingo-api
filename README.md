@@ -26,11 +26,11 @@ Game lifecycle: `WAITING` → `RUNNING` → `FINISHED` (or `CANCELLED`).
 
 | Area                 | Technology                                   |
 | -------------------- | -------------------------------------------- |
-| Language / framework | Java 17+ (21 recommended), Spring Boot 3     |
+| Language / framework | Java 17+ (21 recommended), Spring Boot 4     |
 | Data access          | Spring `JdbcClient` (plain JDBC, **no JPA**) |
 | Database             | PostgreSQL                                   |
 | Migrations           | Flyway                                       |
-| Build                | Maven (wrapper included)                     |
+| Build                | Gradle (wrapper included)                     |
 | Real time            | Server-Sent Events                           |
 | CI                   | GitHub Actions                               |
 | Containers           | Docker, Docker Compose                       |
