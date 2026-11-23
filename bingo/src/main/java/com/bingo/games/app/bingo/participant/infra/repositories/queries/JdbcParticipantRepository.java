@@ -1,5 +1,6 @@
-package com.bingo.games.app.bingo.participant;
+package com.bingo.games.app.bingo.participant.infra.repositories.queries;
 
+import com.bingo.games.app.bingo.participant.domain.model.Participant;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -7,11 +8,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class ParticipantRepository {
+public class JdbcParticipantRepository {
 
     private final JdbcClient jdbc;
 
-    public ParticipantRepository(JdbcClient jdbc) {
+    public JdbcParticipantRepository(JdbcClient jdbc) {
         this.jdbc = jdbc;
     }
 

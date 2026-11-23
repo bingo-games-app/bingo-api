@@ -1,6 +1,6 @@
 package com.bingo.games.app.bingo.auth;
 
-import com.bingo.games.app.bingo.participant.Participant;
+import com.bingo.games.app.bingo.participant.domain.model.Participant;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

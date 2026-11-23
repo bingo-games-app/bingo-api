@@ -1,6 +1,6 @@
 package com.bingo.games.app.bingo.auth;
 
-import com.bingo.games.app.bingo.participant.ParticipantRepository;
+import com.bingo.games.app.bingo.participant.infra.repositories.queries.JdbcParticipantRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,7 +15,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             GuestTokenService tokens,
-                                            ParticipantRepository participants) throws Exception {
+                                            JdbcParticipantRepository participants) throws Exception {
         http
                 // A API usa token no header (não cookie)
                 .csrf(csrf -> csrf.disable())

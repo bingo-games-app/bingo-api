@@ -1,4 +1,4 @@
-package com.bingo.games.app.bingo.participant;
+package com.bingo.games.app.bingo.participant.domain.model;
 
 import org.springframework.security.access.AccessDeniedException;
 

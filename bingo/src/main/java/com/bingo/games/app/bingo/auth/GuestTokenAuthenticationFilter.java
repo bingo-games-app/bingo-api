@@ -1,6 +1,6 @@
 package com.bingo.games.app.bingo.auth;
 
-import com.bingo.games.app.bingo.participant.ParticipantRepository;
+import com.bingo.games.app.bingo.participant.infra.repositories.queries.JdbcParticipantRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,9 +20,9 @@ public class GuestTokenAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final GuestTokenService tokens;
-    private final ParticipantRepository participants;
+    private final JdbcParticipantRepository participants;
 
-    public GuestTokenAuthenticationFilter(GuestTokenService tokens, ParticipantRepository participants) {
+    public GuestTokenAuthenticationFilter(GuestTokenService tokens, JdbcParticipantRepository participants) {
         this.tokens = tokens;
         this.participants = participants;
     }
